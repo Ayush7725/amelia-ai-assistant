@@ -1,0 +1,27 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# Runtime data (contains customer PII: ID documents, KYC videos, cheques)
+uploads/
+*.db
+*.sqlite3
+
+# Face models (download steps in README.md)
+models/
+
+# Loose personal/sample media in project root
+/*.png
+/*.jpeg
+/*.jpg
+
+# Local frontend config with credentials
+config.js

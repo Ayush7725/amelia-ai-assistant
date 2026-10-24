@@ -1,0 +1,3021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+
+<title>Demo Bank AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+    /* --- THEME VARIABLES --- */
+    :root {
+        /* Dark theme (kept for toggle) */
+        --bg-body: #050505; 
+        --bg-container: #050505;
+        --bg-header: rgba(5, 5, 5, 0.95);
+        --bg-chat: radial-gradient(circle at 50% 30%, #1a0b1a 0%, #050505 60%);
+        --bg-controls: rgba(10, 10, 10, 0.98);
+        --bg-input: #1f1f22;
+        --text-primary: #ffffff;
+        --text-secondary: #888899;
+        --border-color: #222;
+
+        --bot-bubble-bg: linear-gradient(135deg, #FF2E93, #C52BFF);
+        --bot-text: #fff;
+        --user-bubble-bg: #1f1f22;
+        --user-text: #ddd;
+
+        --brain-gradient: linear-gradient(45deg, #ff00cc, #3333ff, #ff00cc);
+        --brain-shadow: rgba(197, 43, 255, 0.6);
+        
+        --launcher-bg: #8B5CF6;
+    }
+
+    /* LIGHT Theme Overrides */
+    .light-mode {
+        --bg-body: #ffffff; 
+        --bg-container: #ffffff;
+        --bg-header: rgba(255, 255, 255, 0.95);
+        --bg-chat: #f0f2f5;
+        --bg-controls: #ffffff;
+        --bg-input: #f0f0f0;
+        --text-primary: #1a1a1a;
+        --text-secondary: #555;
+        --border-color: #ddd;
+
+        --bot-bubble-bg: #ffffff;
+        --bot-text: #000;
+        --user-bubble-bg: #dcf8c6;
+        --user-text: #000;
+
+        --brain-gradient: linear-gradient(45deg, #D946EF, #7C3AED, #D946EF);
+        --brain-shadow: rgba(124, 58, 237, 0.4);
+        
+        --launcher-bg: #7C3AED;
+    }
+ .upload-success {
+        background: #ffffff;
+        color: #1a1a1a;
+        border: 1px solid #eee;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+
+    body {
+        font-family: 'Inter', 'Noto Sans Devanagari', sans-serif;
+        background: var(--bg-body);
+        height: 100vh;
+        color: var(--text-primary);
+        overflow: hidden;
+        transition: background 0.3s ease;
+    }
+
+    #app-container {
+        width: 100%;
+        max-width: 100%; 
+        height: 100%;    
+        max-height: none; 
+        background: var(--bg-container);
+        border-radius: 0; 
+        box-shadow: none; 
+        display: flex; 
+        flex-direction: column;
+        
+        position: fixed;
+        top: 0;         
+        left: 0;       
+        bottom: 0;     
+        right: 0;      
+        z-index: 9999;
+        
+        border: none; 
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        
+        opacity: 1;
+        transform: none;
+        pointer-events: all;
+    }
+    
+    #app-container.widget-open {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: all;
+    }
+
+    header {
+        padding: 15px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--bg-header);
+        backdrop-filter: blur(10px);
+        z-index: 20;
+        border-bottom: 1px solid var(--border-color);
+        height: 70px;
+        border-top-left-radius: 0; 
+        border-top-right-radius: 0;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 12px; }
+
+    .header-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--text-primary);
+        letter-spacing: 0.5px;
+    }
+
+    #mini-brain-container {
+        width: 35px;
+        height: 35px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .brain-blob {
+        width: 100%;
+        height: 100%;
+        background: var(--brain-gradient);
+        background-size: 200% 200%;
+        border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+        box-shadow: 0 0 10px var(--brain-shadow);
+        animation: morph 6s ease-in-out infinite, gradientShift 3s ease infinite;
+        opacity: 0.8;
+        transition: all 0.3s ease;
+    }
+
+    .brain-blob.listening {
+        animation-duration: 3s;
+        filter: hue-rotate(40deg);
+        transform: scale(0.9);
+        box-shadow: 0 0 15px var(--brain-shadow);
+    }
+
+    .brain-blob.thinking {
+        animation-duration: 1s;
+        filter: brightness(1.5);
+        transform: scale(1.1) rotate(10deg);
+        box-shadow: 0 0 20px var(--brain-shadow);
+    }
+
+    .brain-blob.speaking {
+        animation: morph 1.5s infinite, pulseSpeak 0.4s infinite alternate;
+        transform: scale(1.1);
+    }
+
+    @keyframes morph {
+        0%, 100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+        34% { border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }
+        67% { border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }
+    }
+    @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes pulseSpeak { from { opacity: 0.8; transform: scale(1); } to { opacity: 1; transform: scale(1.15); } }
+
+    .header-right { display: flex; align-items: center; gap: 10px; }
+
+    .status-badge {
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        background: #1f1f22;
+        color: #888;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+        min-width: 60px;
+        text-align: center;
+        white-space: nowrap; 
+    }
+
+    .status-badge.active { background: rgba(0, 255, 128, 0.1); color: #00ff80; border-color: rgba(0, 255, 128, 0.2); }
+    .status-badge.listening { background: rgba(50, 150, 255, 0.15); color: #60a5fa; border-color: rgba(50, 150, 255, 0.3); }
+    .status-badge.speaking { background: rgba(255, 46, 147, 0.15); color: #FF2E93; border-color: rgba(255, 46, 147, 0.3); }
+
+    #theme-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        transition: background 0.2s;
+    }
+    #theme-btn:hover { background: rgba(255,255,255,0.1); }
+    .light-mode #theme-btn:hover { background: rgba(0,0,0,0.05); }
+
+    #chat-scroll-area {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        scroll-behavior: smooth;
+        background: var(--bg-chat);
+        transition: background 0.3s ease;
+    }
+
+    #chat-scroll-area::-webkit-scrollbar { width: 4px; }
+    #chat-scroll-area::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+    .message {
+        padding: 14px 20px;
+        border-radius: 20px;
+        max-width: 85%;
+        font-size: 15px;
+        line-height: 1.5;
+        animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .bot-msg {
+        background: var(--bot-bubble-bg);
+        align-self: flex-start;
+        color: var(--bot-text);
+        border-bottom-left-radius: 4px;
+    }
+
+    .light-mode .bot-msg { border: 1px solid #eee; }
+
+    .user-msg {
+        background: var(--user-bubble-bg);
+        align-self: flex-end;
+        color: var(--user-text);
+        border-bottom-right-radius: 4px;
+    }
+
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    #control-bar {
+        padding: 15px;
+        background: var(--bg-controls);
+        border-top: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transition: background 0.3s ease;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
+
+    #voice-controls {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        align-items: center;
+        height: 60px;
+    }
+
+    .action-btn {
+        width: 50px; height: 50px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        display: flex; justify-content: center; align-items: center;
+        font-size: 20px;
+        transition: all 0.2s;
+        background: var(--bg-input);
+        color: var(--text-primary);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    #btn-call {
+        width: 65px; height: 65px;
+        background: linear-gradient(135deg, #FF2E93, #C52BFF);
+        color: white;
+        box-shadow: 0 5px 15px rgba(197, 43, 255, 0.3);
+    }
+    #btn-call:hover { transform: scale(1.05); }
+
+    .call-active-btn { display: none; }
+
+    #btn-hangup { background: #ff3b30; color: white; }
+    #btn-hangup:hover { background: #ff4f44; box-shadow: 0 0 15px rgba(255, 59, 48, 0.4); }
+
+    #btn-mute.muted { background: #fff; color: #000; border: 2px solid #000; }
+
+    #input-area {
+        display: flex;
+        align-items: center;
+        background: var(--bg-input);
+        border-radius: 30px;
+        padding: 5px 5px 5px 20px;
+        border: 1px solid var(--border-color);
+    }
+
+    #chat-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        font-size: 14px;
+        padding: 10px 0;
+    }
+
+    #btn-send {
+        width: 40px; height: 40px;
+        background: #333;
+        border-radius: 50%;
+        border: none;
+        color: white;
+        cursor: pointer;
+        margin-left: 10px;
+        transition: 0.2s;
+    }
+    
+    #btn-end-chat {
+        width: 40px; height: 40px;
+        background: #ff3b30;
+        border-radius: 50%;
+        border: none;
+        color: white;
+        cursor: pointer;
+        margin-left: 10px;
+        transition: 0.2s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    #btn-end-chat:hover { opacity: 0.8; }
+
+    .light-mode #btn-send { background: #075e54; }
+    #btn-send:hover { opacity: 0.8; }
+
+    .typing-indicator span {
+        display: inline-block; width: 5px; height: 5px;
+        background-color: var(--text-secondary);
+        border-radius: 50%;
+        animation: typeBounce 1.4s infinite ease-in-out both;
+        margin: 0 1px;
+    }
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typeBounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+    .upload-chat-btn {
+        display: inline-block;
+        background: linear-gradient(135deg, #FF2E93, #C52BFF);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 500;
+        margin-top: 10px;
+        text-decoration: none;
+        transition: all 0.2s;
+        box-shadow: 0 2px 8px rgba(197, 43, 255, 0.3);
+    }
+    .upload-chat-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(197, 43, 255, 0.4);
+    }
+
+    .upload-result { padding: 10px 15px; border-radius: 15px; margin: 5px 0; font-size: 14px; max-width: 85%; align-self: flex-start; }
+    .upload-success, .kyc-success { 
+    background: #ffffff;
+    border-left: 4px solid #00ff80;
+    color: #000000;
+    border: 1px solid #ddd;
+}
+    .upload-error, .kyc-error { background: rgba(255, 59, 48, 0.1); border-left: 4px solid #ff3b30; color: #ff3b30; }
+    .upload-pending, .kyc-processing { background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; color: #ffc107; }
+
+    .upload-modal {
+        display: none;
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--bg-container);
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        z-index: 10000;
+        width: 90%; max-width: 450px;
+        border: 1px solid var(--border-color);
+    }
+
+    .upload-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 9999;
+    }
+
+    .upload-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .upload-content { display: flex; flex-direction: column; gap: 15px; }
+
+    .upload-area {
+        border: 2px dashed var(--border-color);
+        border-radius: 15px;
+        padding: 30px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .upload-area:hover { border-color: #C52BFF; background: rgba(197, 43, 255, 0.05); }
+    .upload-area.dragover { border-color: #FF2E93; background: rgba(255, 46, 147, 0.1); }
+
+    .file-list { max-height: 150px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; background: var(--bg-input); }
+    .file-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; border-bottom: 1px solid var(--border-color); }
+    .file-item:last-child { border-bottom: none; }
+
+    .validation-result { margin-top: 10px; padding: 15px; border-radius: 10px; display: none; }
+    .validation-success { 
+    background: #ffffff;
+    border-left: 4px solid #00ff80; 
+    color: #000000;
+}
+    .validation-error { background: rgba(255, 59, 48, 0.1); border-left: 4px solid #ff3b30; }
+
+    .spinner {
+        border: 3px solid var(--border-color);
+        border-top: 3px solid #C52BFF;
+        border-radius: 50%;
+        width: 24px; height: 24px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .action-buttons { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
+    .btn-secondary { background: transparent; border: 1px solid var(--border-color); color: var(--text-primary); padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: 500; }
+    .btn-primary { background: linear-gradient(135deg, #FF2E93, #C52BFF); color: white; border: none; padding: 10px 30px; border-radius: 25px; cursor: pointer; font-weight: 500; }
+
+    .header-btn { background: transparent; border: none; color: var(--text-primary); font-size: 16px; cursor: pointer; padding: 8px; border-radius: 50%; transition: background 0.2s; }
+    .header-btn:hover { background: rgba(255,255,255,0.1); }
+
+    #widget-launcher {
+        display: none; 
+        position: fixed;
+        bottom: 20px; right: 20px;
+        width: 60px; height: 60px;
+        background: var(--launcher-bg);
+        border-radius: 50%;
+        cursor: pointer;
+        justify-content: center; align-items: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 10000;
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #widget-launcher:hover { transform: scale(1.1); }
+    #widget-launcher svg { width: 28px; height: 28px; stroke: white; transition: all 0.3s ease; }
+
+    #startKycBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6); }
+    #startKycBtn.chat-button { margin: 10px 0 0 0; align-self: flex-start; }
+    #kyc-modal .upload-content { max-height: 80vh; overflow-y: auto; }
+    
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    #recordingIndicator { animation: pulse 1.5s infinite; }
+    
+    @keyframes timerShake { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+    #kycTimer { transition: color 0.3s; }
+    #kycTimer:last-child { animation: timerShake 0.5s; }
+    
+    #kycVideo { transform: scaleX(-1); border: 3px solid #667eea; max-width: 100%; height: auto; }
+ .cheque-success-message {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #ddd !important;
+    }
+
+    .light-mode .cheque-success-message {
+        background: #ffffff !important;
+        color: #1a1a1a !important;
+        border: 1px solid #eee !important;
+    }
+
+    :root .cheque-success-message {
+        background: #ffffff !important;
+        color: #000000 !important;
+        border: 1px solid #333 !important;
+    }
+
+    .kyc-report {
+            background: var(--bg-secondary);
+            border: 1px solid #00ff80;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 10px 0;
+            max-width: 85%;
+        }
+
+        .kyc-header {
+            font-weight: bold;
+            color: #00ff80;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #444;
+        }
+
+        .kyc-preview-grid {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .kyc-item img {
+            border-radius: 4px;
+            border: 1px solid #667eea;
+            background: #000;
+        }
+
+        .kyc-item span,
+        .kyc-video-preview span {
+            display: block;
+            font-size: 10px;
+            color: #aaa;
+            margin-bottom: 4px;
+        }
+
+    .agent-pulse {
+        animation: chatPulse 1.5s infinite alternate;
+        border: 2px solid #C52BFF !important;
+        background: rgba(197, 43, 255, 0.05) !important;
+    }
+    @keyframes chatPulse {
+        from { box-shadow: 0 0 5px rgba(197, 43, 255, 0.4); }
+        to { box-shadow: 0 0 20px rgba(197, 43, 255, 0.8); }
+    }
+
+    .hangup-chat-btn {
+        background: #ff3b30;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        margin-top: 10px;
+        font-weight: 600;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+      .chat-table-wrap {
+        overflow: visible;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        background: #fff;
+        padding: 8px;
+    }
+
+    .chat-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        color: #111;
+        table-layout: auto;
+    }
+
+    .chat-table th, .chat-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+        text-align: left;
+        white-space: normal;
+        word-break: break-word;
+        vertical-align: top;
+    }
+
+    .chat-table th {
+        background: #f6f7f9;
+        font-weight: 700;
+    }
+
+    .chat-table-note {
+        font-size: 12px;
+        margin-top: 8px;
+        opacity: 0.8;
+        color: #111;
+    }
+
+    .quick-reply-btn{
+        border: 1px solid var(--border-color);
+        background: var(--bg-input);
+        color: var(--text-primary);
+        padding: 8px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: 0.15s;
+    }
+    .quick-reply-btn:hover{
+        opacity: 0.85;
+    }
+
+
+</style>
+</head>
+<body>
+
+<div id="app-container" class="light-mode">
+    <header>
+        <div class="header-left">
+            <div class="header-title">Amelia</div>
+            <div id="mini-brain-container">
+                <div id="brain-visualizer" class="brain-blob"></div>
+            </div>
+        </div>
+
+        <div class="header-right">
+            <div id="connection-status" class="status-badge">Offline</div>
+            <button id="theme-btn" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i></button>
+        </div>
+    </header>
+
+    <div id="chat-scroll-area"></div>
+
+    <div id="control-bar">
+        <div id="voice-controls">
+            <button id="btn-mute" class="action-btn call-active-btn" onclick="toggleMute()">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+            <button id="btn-call" class="action-btn" onclick="startCall()">
+                <i class="fa-solid fa-phone"></i>
+            </button>
+            <button id="btn-hangup" class="action-btn call-active-btn" onclick="endCall()">
+                <i class="fa-solid fa-phone-slash"></i>
+            </button>
+        </div>
+
+        <div id="input-area">
+            <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleInputKey(event)" onfocus="triggerChatGreeting()">
+            
+            <button id="btn-end-chat" onclick="endChat()" title="End Chat & Save">
+                <i class="fa-solid fa-stop"></i>
+            </button>
+            
+            <button id="btn-send" onclick="sendTextMessage()"><i class="fa-solid fa-arrow-up"></i></button>
+        </div>
+    </div>
+</div>
+
+<div id="widget-launcher" onclick="toggleWidget()">
+    <svg id="launcher-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+</div>
+
+<div class="upload-overlay" id="upload-overlay" onclick="hideUploadModal()"></div>
+<div class="upload-modal" id="upload-modal">
+    <div class="upload-header">
+        <h3 style="margin: 0; color: var(--text-primary);">Validate Cheque</h3>
+        <button onclick="hideUploadModal()" style="background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 20px;">
+            <i class="fa-solid fa-times"></i>
+        </button>
+    </div>
+    <div class="upload-content">
+        <div class="upload-area" id="drop-area" 
+             ondragover="handleDragOver(event)" 
+             ondragleave="handleDragLeave(event)" 
+             ondrop="handleDrop(event)">
+            <i class="fa-solid fa-cloud-upload-alt" style="font-size: 40px; color: #C52BFF; margin-bottom: 10px;"></i>
+            <p style="color: var(--text-primary); margin-bottom: 8px;">Drag & Drop cheque image here</p>
+            <p style="color: var(--text-secondary); font-size: 13px; margin-bottom: 15px;">or</p>
+            <button onclick="document.getElementById('file-input').click()" class="btn-primary">Browse Files</button>
+            <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.pdf" style="display: none;" onchange="handleFileSelect(event)" multiple>
+            <p style="color: var(--text-secondary); font-size: 11px; margin-top: 10px;">Supported: PNG, JPG, JPEG, PDF (max 10MB)</p>
+        </div>
+        <div id="file-list" class="file-list"></div>
+        <div id="validation-result" class="validation-result"></div>
+        <div class="action-buttons">
+            <button onclick="hideUploadModal()" class="btn-secondary">Cancel</button>
+            <button onclick="uploadFiles()" id="upload-btn" class="btn-primary">Validate</button>
+        </div>
+    </div>
+</div>
+
+ <button id="startKycBtn" style="display: none;">Initiate Video KYC</button>
+
+<div class="upload-overlay" id="kyc-overlay"></div>
+<div class="upload-modal" id="kyc-modal">
+    <div class="upload-header">
+        <h3 id="kycHeaderTitle" style="margin: 0; color: var(--text-primary);"> Step 1: Upload ID Document</h3>
+        <button onclick="closeKycModal()" style="background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 20px;">
+            <i class="fa-solid fa-times"></i>
+        </button>
+    </div>
+
+    <div class="upload-content" style="text-align: center;">
+        
+        <div id="upload-step-area" style="padding: 20px; border: 2px dashed #667eea; border-radius: 10px; margin-bottom: 15px; background: #f8f9ff;">
+            <p style="margin-bottom: 10px; font-weight: 600; color: #333;">Please upload a clear photo of your ID</p>
+            <input type="file" id="usDocUpload" accept="image/*" style="display: none;" onchange="handleUpload()">
+            <button onclick="document.getElementById('usDocUpload').click()" 
+                    style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 25px; cursor: pointer; font-weight: 600;">
+                <i class="fa-solid fa-cloud-upload"></i> Choose File
+            </button>
+            <p id="fileNameDisplay" style="margin-top: 10px; color: #27ae60; font-size: 13px; font-weight: bold;"></p>
+        </div>
+
+        <div id="video-step-container" style="display: none;">
+            <div id="kyc-video-container" style="position: relative; width: 100%; max-width: 400px; aspect-ratio: 4 / 3; margin: 0 auto 10px auto; border-radius: 8px; overflow: hidden; background: #000; border: 2px solid #667eea; box-sizing: border-box;">
+                <video id="kycVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover; display: block;"></video>
+                
+                <svg id="cardOverlay" viewBox="0 0 400 300" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none;">
+                    <defs>
+                        <mask id="overlayMask"><rect width="400" height="300" fill="white" /><rect x="60" y="70" width="280" height="160" rx="12" fill="black" /></mask>
+                        <mask id="faceMask"><rect width="400" height="300" fill="white" /><circle cx="200" cy="140" r="85" fill="black" /></mask>
+                    </defs>
+                    <rect id="overlayBg" width="400" height="300" fill="rgba(0,0,0,0.4)" mask="url(#faceMask)" />
+                    <circle id="overlayCircle" cx="200" cy="140" r="85" fill="none" stroke="#00d2ff" stroke-width="4" stroke-dasharray="10,5" />
+                </svg>
+
+                <div id="stepBubble" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 11px; display: none; border: 1px solid #00d2ff; z-index: 10;">
+                    Step 2: Biometric
+                </div>
+            </div>
+
+            <div id="kycTimer" style="font-size: 28px; font-weight: bold; color: #667eea; margin: 10px 0;"></div>
+            <div id="currentStepDisplay" style="color: #ff4757; font-size: 16px; font-weight: bold; margin-bottom: 10px; min-height: 25px;">Position your face in the circle</div>
+            
+            <button id="recordBtn" style="background: #ff4757; color: white; padding: 12px 24px; border: none; border-radius: 25px; cursor: pointer; font-weight: 600; width: 100%;" onclick="startKycRecording()">
+                Start 6s Face Video (look straight, then turn left and right)
+            </button>
+        </div>
+        
+        <div id="kycStatus" style="margin-top: 15px; padding: 10px; border-radius: 8px; display: none;"></div>
+    </div>
+</div>
+
+    <canvas id="docCaptureCanvas" style="display:none;"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/sip.js@0.16.0/dist/sip-0.16.0.min.js"></script>
+<!-- Local, git-ignored settings (copy config.example.js to config.js) -->
+<script src="config.js"></script>
+<script>const SIP_CFG = (window.AMELIA_CONFIG && window.AMELIA_CONFIG.sip) || {};
+const DIALER_CFG = (window.AMELIA_CONFIG && window.AMELIA_CONFIG.dialer) || {};</script>
+
+<script>
+/* ==========================================================
+   1. CONFIGURATION & STATE
+   ========================================================== */
+const PRIMARY_LANGUAGE = "English";
+const SECONDARY_LANGUAGE = "English";
+const VOICE_WS_URL = "ws://localhost:8005/ws/voice";
+const API_BASE_URL = "http://localhost:8001";
+const KYC_API_BASE_URL = "http://localhost:8001";
+
+const CHAT_WS_URL = "ws://localhost:8001/ws/chat";
+
+localStorage.clear();
+sessionStorage.clear();
+
+let clientId = "client_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+localStorage.setItem("amelia_client_id", clientId);
+
+let conversationId = 0;
+let conversationMessages = [];
+let sessionStartTime = new Date().toISOString();
+let currentStreamingBotText = "";
+let isTicketGenerated = false;
+
+/* ============ DIGIT RECOGNITION VARIABLES - ADDED ============ */
+let expectingDigits = false;
+let digitBuffer = "";
+const DIGIT_KEYWORDS = ['account', 'number', 'card', 'pin', 'otp', 'code', 'mobile', 'phone', 'digit', 'enter', 'provide', 'tell me', 'give me'];
+const DIGIT_MAP = {
+    'one': '1', 'won': '1', 'wan': '1',
+    'two': '2', 'to': '2', 'too': '2', 'tu': '2',
+    'three': '3', 'tree': '3', 'free': '3',
+    'four': '4', 'for': '4', 'fore': '4',
+    'five': '5', 'fife': '5',
+    'six': '6', 'sicks': '6', 'sex': '6',
+    'seven': '7', 'saven': '7',
+    'eight': '8', 'ate': '8', 'ait': '8',
+    'nine': '9', 'nein': '9', 'mine': '9',
+    'zero': '0', 'oh': '0', 'o': '0', 'zo': '0',
+    'ten': '10', 'tin': '10',
+    'double': '', 'triple': ''
+};
+
+function shouldExpectDigits(text) {
+    const lower = text.toLowerCase();
+    return DIGIT_KEYWORDS.some(keyword => lower.includes(keyword));
+}
+
+function normalizeDigits(text) {
+    if (!text) return text;
+    let normalized = text.toLowerCase();
+    
+    // Handle "double X" and "triple X"
+    normalized = normalized.replace(/double\s+(\w+)/gi, (match, digit) => {
+        const d = DIGIT_MAP[digit.toLowerCase()] || digit;
+        return d + d;
+    });
+    normalized = normalized.replace(/triple\s+(\w+)/gi, (match, digit) => {
+        const d = DIGIT_MAP[digit.toLowerCase()] || digit;
+        return d + d + d;
+    });
+    
+    // Replace word numbers with digits
+    Object.keys(DIGIT_MAP).forEach(word => {
+        if (DIGIT_MAP[word] !== '') {
+            const regex = new RegExp('\\b' + word + '\\b', 'gi');
+            normalized = normalized.replace(regex, DIGIT_MAP[word]);
+        }
+    });
+    
+    // Clean up spaces between digits
+    normalized = normalized.replace(/(\d)\s+(\d)/g, '$1$2');
+    
+    // Extract only numbers if in digit mode
+    if (expectingDigits) {
+        const digitsOnly = normalized.match(/\d+/g);
+        if (digitsOnly) return digitsOnly.join('');
+    }
+    
+    return normalized;
+}
+
+function sendDigitContext(isExpecting) {
+    if (voiceSocket && voiceSocket.readyState === WebSocket.OPEN) {
+        try {
+            voiceSocket.send(JSON.stringify({
+                type: 'context',
+                expecting_digits: isExpecting,
+                hint: isExpecting ? 'numeric_input' : 'normal_text'
+            }));
+        } catch (e) { console.warn('Could not send digit context:', e); }
+    }
+}
+/* ============ END DIGIT RECOGNITION SECTION ============ */
+
+/* State Variables */
+let voiceSocket = null;
+let chatSocket = null;
+let micCtx, processor, micStream, speakerCtx;
+let audioQueue = [];
+let isPlaying = false;
+let currentSource = null;
+let lastBotMessage = "";
+let isCallActive = false;
+let isMuted = false;
+let isDarkMode = false;
+let currentUserBubble = null;
+let currentChatBubble = null;
+let hasGreeted = false;
+let mixCtx = null;
+let mixDest = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+let mixedRecordingActive = false;
+
+let humanAgentSession = null;
+
+const appContainer = document.getElementById("app-container");
+const themeBtn = document.getElementById("theme-btn");
+const brain = document.getElementById("brain-visualizer");
+const statusBadge = document.getElementById("connection-status");
+const chatBox = document.getElementById("chat-scroll-area");
+const btnCall = document.getElementById("btn-call");
+const btnHangup = document.getElementById("btn-hangup");
+const btnMute = document.getElementById("btn-mute");
+const btnsActive = document.querySelectorAll(".call-active-btn");
+const inputField = document.getElementById("chat-input");
+const processedFrontendActions = new Set();
+let processingSwitch = false;
+
+/* ==========================================================
+   2. HELPER FUNCTIONS
+   ========================================================== */
+
+async function generateTicket() {
+    if (isTicketGenerated) return;
+    isTicketGenerated = true;
+
+    const payload = { 
+        "client_id": clientId,
+        "status": "New",
+        "sentiment": "NA",
+        "analysis": "NA",
+        "conversation": "NA"
+    };
+
+    try {
+        console.log("Generating Ticket...", payload);
+        await fetch(DIALER_CFG.ticketUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        console.log("Ticket generated successfully.");
+    } catch (error) {
+        console.error("Error generating ticket:", error);
+    }
+}
+
+function isAllowedLanguage(text) {
+    const invalidChars = text.match(/[^\u0000-\u007F\u0900-\u097F\s\p{P}\p{S}\d]/u);
+    return !invalidChars; 
+}
+
+async function saveConversation() {
+    console.log("Saving conversation to DB...");
+    const payload = {
+        client_id: clientId,
+        tts: "amelia_web_agent",
+        conversation_id: conversationId,
+        messages: conversationMessages,
+        start_time: sessionStartTime,
+        end_time: new Date().toISOString()
+    };
+    try {
+        const response = await fetch('save_conversation.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.ok && data.conversation_id) {
+            conversationId = data.conversation_id;
+        }
+    } catch (error) { console.error("Error saving conversation:", error); }
+}
+
+async function endChat() {
+    if (conversationMessages.length === 0) return;
+    
+    const div = document.createElement("div");
+    div.classList.add("message", "bot-msg");
+    div.style.fontStyle = "italic";
+    div.innerText = "Conversation Ended & Saved.";
+    chatBox.appendChild(div);
+    scrollToBottom();
+
+    await saveConversation();
+}
+
+function toggleTheme() {
+    isDarkMode = !isDarkMode;
+    if (isDarkMode) {
+        appContainer.classList.remove("light-mode");
+        themeBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+    } else {
+        appContainer.classList.add("light-mode");
+        themeBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+    }
+}
+
+let isWidgetOpen = false;
+function toggleWidget() {
+    isWidgetOpen = !isWidgetOpen;
+    const container = document.getElementById('app-container');
+    const icon = document.getElementById('launcher-icon');
+    if (isWidgetOpen) {
+        container.classList.add('widget-open');
+        icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+    } else {
+        container.classList.remove('widget-open');
+        icon.innerHTML = '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2-2z"></path>';
+    }
+}
+
+function updateVoiceStatus(status, stateClass) {
+    statusBadge.innerText = status;
+    statusBadge.className = "status-badge active";
+    if (stateClass === "listening") statusBadge.classList.add("listening");
+    if (stateClass === "speaking") statusBadge.classList.add("speaking");
+    brain.className = "brain-blob";
+    if (stateClass) brain.classList.add(stateClass);
+}
+
+function scrollToBottom() { chatBox.scrollTop = chatBox.scrollHeight; }
+
+function typeWriterEffect(element, text, speed = 15) {
+    let i = 0;
+    function type() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            scrollToBottom();
+            setTimeout(type, speed);
+        }
+    }
+    type();
+}
+
+/* ============ MODIFIED: addMessage function with digit detection ============ */
+function addMessage(text, fromBot) {
+    if (fromBot && text === lastBotMessage) return;
+    if (fromBot) {
+        lastBotMessage = text;
+        
+        // Check if bot is asking for digits
+        if (shouldExpectDigits(text)) {
+            console.log('🔢 Bot asking for digits, enabling digit mode');
+            expectingDigits = true;
+            sendDigitContext(true);
+        } else {
+            expectingDigits = false;
+            sendDigitContext(false);
+        }
+    }
+    removeTypingIndicator();
+    const div = document.createElement("div");
+    div.classList.add("message", fromBot ? "bot-msg" : "user-msg");
+    chatBox.appendChild(div);
+    if (fromBot) typeWriterEffect(div, text); else div.innerText = text;
+    scrollToBottom();
+    conversationMessages.push({ sender: fromBot ? 'system' : 'user', text: text, ts: new Date().toISOString() });
+    return div;
+}
+/* ============ END MODIFICATION ============ */
+
+function renderTableMessage({ title, columns, rows, note }) {
+  const wrap = document.createElement("div");
+  wrap.className = "message bot-msg";
+
+  const safeTitle = title ? `<div style="font-weight:700;margin-bottom:8px;">${title}</div>` : "";
+
+  const thead = `
+    <thead>
+      <tr>
+        ${columns.map(c => `<th>${c}</th>`).join("")}
+      </tr>
+    </thead>`;
+
+  const tbody = `
+    <tbody>
+      ${rows.map(r => `<tr>${r.map(cell => `<td>${cell ?? ""}</td>`).join("")}</tr>`).join("")}
+    </tbody>`;
+
+  wrap.innerHTML = `
+    ${safeTitle}
+    <div class="chat-table-wrap">
+      <table class="chat-table">
+        ${thead}
+        ${tbody}
+      </table>
+    </div>
+    ${note ? `<div class="chat-table-note">${note}</div>` : ""}
+  `;
+
+  chatBox.appendChild(wrap);
+  scrollToBottom();
+}
+
+
+function showTypingIndicator() {
+    const div = document.createElement("div");
+    div.classList.add("message", "bot-msg", "typing-bubble");
+    div.innerHTML = `<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+    chatBox.appendChild(div);
+    scrollToBottom();
+}
+function removeTypingIndicator() { document.querySelectorAll('.typing-bubble').forEach(e => e.remove()); }
+
+function triggerChatGreeting() {
+    if (!hasGreeted) {
+        addMessage(`Hi this is Amelia, your friendly AI Assistant from Demo Bank. For quality & security purposes this conversation will be recorded. How can I help you today?`, true);
+        hasGreeted = true;
+    }
+}
+
+/* ==========================================================
+   3. CHAT LOGIC
+   ========================================================== */
+function initChatSocket() {
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) return;
+    chatSocket = new WebSocket(CHAT_WS_URL);
+    chatSocket.onopen = () => console.log("📱 Chat Connected");
+    
+    chatSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+          if (data.type === "client_id") {
+            clientId = data.client_id;
+            localStorage.setItem("amelia_client_id", clientId);
+            console.log("✅ Server assigned client_id:", clientId);
+            return;
+        }
+          if (data && data.type === "frontend_action") {
+        try {
+            console.log("chatSocket received frontend_action:", data);
+            handleFrontendAction(data);
+        } catch (e) {
+            console.error("handleFrontendAction error (chat):", e);
+        }
+        return;
+    }
+          
+            
+       
+if (chatPaused) {
+        console.debug("chat paused - ignoring chatSocket message:", data);
+        return;
+    }
+
+        if (data.type === "upload_trigger") { removeTypingIndicator(); handleBotUploadTrigger(data.message); return; }
+        if (data.type === "kyc_trigger") { removeTypingIndicator(); addMessage(data.message,true);  handleKycTrigger(data.message); return; }
+        
+        if (data.type === "bot_table") {
+            removeTypingIndicator();
+            try {
+                const rowsRaw = Array.isArray(data.rows) ? data.rows : (data.rows || []).split('\n');
+                const parsed = rowsRaw.map(r => {
+                    let cols = r.split('|').map(s => s.trim()).filter(s=>s!=='');
+                    if (cols.length <= 1) cols = r.split('\t').map(s => s.trim()).filter(s=>s!=='');
+                    if (cols.length <= 1) cols = r.split(',').map(s => s.trim()).filter(s=>s!=='');
+                    if (cols.length <= 1) cols = [r.trim()];
+                    return cols;
+                }).filter(r=>r.length>0);
+
+                let columns = [];
+                let body = parsed;
+                if (parsed.length > 1 && parsed[0].length > 1) {
+                    columns = parsed[0];
+                    body = parsed.slice(1);
+                } else if (parsed.length >= 1 && parsed[0].length > 1) {
+                    columns = parsed[0];
+                } else {
+                    columns = ['Information'];
+                }
+
+                renderTableMessage({ title: null, columns: columns, rows: body, note: null });
+            } catch (err) {
+                console.error('Error rendering bot_table (chat):', err);
+                addMessage(data.raw || (Array.isArray(data.rows) ? data.rows.join('\n') : data.rows), true);
+            }
+            return;
+        }
+
+        if (data.type === "table") {
+            removeTypingIndicator();
+            renderTableMessage(data);
+            return;
+        }
+        if (data.type === "bot_chunk") {
+            removeTypingIndicator();
+            currentStreamingBotText += data.text;
+            appendChatToken(data.text);
+        }
+        if (data.type === "bot_done") {
+            currentChatBubble = null;
+            if (currentStreamingBotText.trim() !== "") {
+                conversationMessages.push({ sender: 'system', text: currentStreamingBotText, ts: new Date().toISOString() });
+                currentStreamingBotText = "";
+            }
+        }
+    };
+    chatSocket.onclose = () => { setTimeout(initChatSocket, 3000); };
+}
+
+function appendChatToken(token) {
+    if (!currentChatBubble) {
+        currentChatBubble = document.createElement("div");
+        currentChatBubble.classList.add("message", "bot-msg");
+        chatBox.appendChild(currentChatBubble);
+    }
+    currentChatBubble.innerHTML += token;
+    scrollToBottom();
+}
+initChatSocket();
+
+function handleInputKey(e) { if (e.key === 'Enter') sendTextMessage(); }
+
+function sendTextMessage() {
+    if (humanAgentSession && humanAgentSession.isTextMode) {
+        const text = inputField.value.trim();
+        if (!text) return;
+
+        addMessage(text, false);
+        inputField.value = "";
+
+        console.log("📤 Sending message to Human Agent via Webhook...");
+        
+if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+    chatSocket.send(JSON.stringify({ text }));
+    console.log("📤 Sent message to /ws/chat for agent delivery:", text);
+} else {
+    fetch(DIALER_CFG.nonAgentApiUrl + '?' + new URLSearchParams({
+        source: "chat_interface", user: DIALER_CFG.apiUser, pass: DIALER_CFG.apiPass,
+        function: "send_chat", uniqueid: clientId, message: text
+    })).then(r => r.text()).then(d => console.log("fallback to vicidial:", d)).catch(e => console.error("fallback failed", e));
+}
+
+        return;
+    }
+
+    if (!hasGreeted) hasGreeted = true;
+    const text = inputField.value.trim();
+    if (!text) return;
+
+    generateTicket();
+
+    if (!isAllowedLanguage(text)) {
+        alert(`Please type only in ${PRIMARY_LANGUAGE} or ${SECONDARY_LANGUAGE}. Other languages are not supported.`);
+        inputField.value = "";
+        return;
+    }
+
+    addMessage(text, false);
+    inputField.value = "";
+    currentStreamingBotText = "";
+
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+          chatSocket.send(JSON.stringify({ text }));
+        currentChatBubble = null;
+        showTypingIndicator();
+    } else {
+        addMessage("❌ Chat service is disconnected.", true);
+    }
+}
+
+var isAgentMuted = false;
+
+function toggleAgentMute(btn) {
+    isAgentMuted = !isAgentMuted;
+    const icon = btn.querySelector("i");
+    const shouldEnableAudio = !isAgentMuted;
+
+    console.log(isAgentMuted ? "🔇 Muting Call..." : "🎤 Unmuting Call...");
+
+    if (isAgentMuted) {
+        icon.classList.remove("fa-microphone");
+        icon.classList.add("fa-microphone-slash");
+        btn.style.backgroundColor = "#ffe6e6";
+        btn.style.color = "#dc3545";
+        btn.style.borderColor = "#dc3545";
+    } else {
+        icon.classList.remove("fa-microphone-slash");
+        icon.classList.add("fa-microphone");
+        btn.style.backgroundColor = "#f0f0f0";
+        btn.style.color = "#555";
+        btn.style.borderColor = "#ddd";
+    }
+
+    if (typeof micStream !== 'undefined' && micStream) {
+        micStream.getAudioTracks().forEach(track => {
+            track.enabled = shouldEnableAudio;
+            console.log(`Global Mic Track ${track.id} enabled: ${track.enabled}`);
+        });
+    }
+
+    if (typeof humanAgentSession !== 'undefined' && humanAgentSession) {
+        const pc = humanAgentSession.sessionDescriptionHandler.peerConnection;
+        if (pc) {
+            const senders = pc.getSenders();
+            let foundAudio = false;
+            
+            senders.forEach((sender) => {
+                if (sender.track && sender.track.kind === 'audio') {
+                    sender.track.enabled = shouldEnableAudio;
+                    foundAudio = true;
+                    console.log(`SIP Audio Sender ${sender.track.id} enabled: ${sender.track.enabled}`);
+                }
+            });
+
+            if (!foundAudio) console.warn("⚠️ No audio senders found in SIP session to mute.");
+        }
+    } else {
+        console.warn("⚠️ humanAgentSession is missing. Cannot mute SIP call yet.");
+    }
+}
+
+/* ==========================================================
+   4. VOICE LOGIC
+   ========================================================== */
+async function startCall() {
+    if (humanAgentSession) return;
+    generateTicket();
+
+    try {
+        console.log("startCall: initializing microphone and mixer...");
+        await startMicrophone();
+        console.log("startCall: startMicrophone() completed");
+    } catch (err) {
+        console.error("startCall: startMicrophone() failed:", err);
+        updateVoiceStatus("Audio init failed", "");
+        addMessage("Microphone initialization failed: " + (err && err.message ? err.message : err), true);
+        return;
+    }
+
+    isCallActive = true;
+    btnCall.style.display = "none";
+    btnsActive.forEach(b => b.style.display = "flex");
+    updateVoiceStatus("Connecting...", "");
+
+    try {
+        voiceSocket = new WebSocket(VOICE_WS_URL);
+        voiceSocket.binaryType = "arraybuffer";
+
+        voiceSocket.onerror = (ev) => {
+            console.error("voiceSocket.onerror (early):", ev);
+        };
+
+        await new Promise((resolve, reject) => {
+            const timeoutMs = 5000;
+            let settled = false;
+            const timer = setTimeout(() => {
+                if (!settled) {
+                    settled = true;
+                    reject(new Error("Voice WS open timeout"));
+                }
+            }, timeoutMs);
+
+            voiceSocket.onopen = () => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                console.log("voiceSocket opened");
+                resolve();
+            };
+
+            voiceSocket.onclose = (ev) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                reject(new Error("Voice WS closed before open: code=" + (ev && ev.code)));
+            };
+            voiceSocket.onerror = (ev) => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                reject(new Error("Voice WS error during open"));
+            };
+        });
+
+        updateVoiceStatus("Listening...", "listening");
+
+        voiceSocket.onmessage = (e) => {
+            try {
+                if (e.data instanceof ArrayBuffer) {
+                    playPCM16(new Int16Array(e.data));
+                    return;
+                }
+
+                let msg;
+                try {
+                    msg = JSON.parse(e.data);
+                } catch (parseErr) {
+                    console.warn("voiceSocket: received non-JSON text:", e.data);
+                    return;
+                }
+              
+                if (msg.type === "frontend_action" && msg.action === "call_agent") {
+    console.log("📞 AI requested transfer to:", msg.destination);
+    console.log("📞 Switching to Phone Mode...");
+
+    const transferDiv = document.createElement("div");
+    transferDiv.className = "message bot-msg agent-pulse";
+    
+    transferDiv.innerHTML = `
+        <div style="margin-bottom: 10px;">
+            <i class="fa-solid fa-headset"></i> 
+            <strong>Transferring call to Ankit...</strong>
+            <div style="font-size:12px; margin-top:4px; opacity: 0.8;">Please wait while we connect you.</div>
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+            <button class="hangup-chat-btn" onclick="terminateAgentCall()" style="
+                flex: 1; 
+                background-color: #ff4b4b; 
+                color: white; 
+                border: none; 
+                padding: 10px; 
+                border-radius: 25px; 
+                font-weight: bold; 
+                cursor: pointer; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                gap: 8px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                <i class="fa-solid fa-phone-slash"></i> Hangup
+            </button>
+
+            <button id="btnAgentMute" onclick="toggleAgentMute(this)" style="
+                width: 42px; 
+                height: 42px; 
+                border-radius: 50%; 
+                border: 1px solid #ddd; 
+                background-color: #f0f0f0; 
+                color: #555; 
+                cursor: pointer; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                font-size: 16px; 
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+        </div>
+    `;
+    
+    chatBox.appendChild(transferDiv);
+    scrollToBottom();
+
+    try { if (voiceSocket && voiceSocket.readyState === WebSocket.OPEN) voiceSocket.close(); } catch (e) { console.warn("Error closing voiceSocket:", e); }
+
+    initiateWebRTCCall(msg.destination);
+    return;
+}
+
+                if (msg.type === "user_start") {
+                    currentUserBubble = document.createElement("div");
+                    currentUserBubble.classList.add("message", "user-msg");
+                    currentUserBubble.innerHTML = "...";
+                    chatBox.appendChild(currentUserBubble);
+                    scrollToBottom();
+                }
+
+                /* ============ MODIFIED: user_text handler with digit normalization ============ */
+                if (msg.type === "user_text") {
+                    let userText = msg.text;
+                    
+                    // Apply digit normalization if in digit mode
+                    if (expectingDigits) {
+                        console.log('🔢 Original transcription:', userText);
+                        userText = normalizeDigits(userText);
+                        console.log('🔢 Normalized to:', userText);
+                    }
+                    
+                    if (currentUserBubble) {
+                        if (!isAllowedLanguage(userText)) {
+                            currentUserBubble.innerHTML = `<i>(Language not supported. Please speak ${PRIMARY_LANGUAGE} or ${SECONDARY_LANGUAGE})</i>`;
+                            setTimeout(() => { if (currentUserBubble) currentUserBubble.remove(); currentUserBubble = null; }, 2000);
+                            return;
+                        }
+                        currentUserBubble.innerText = userText;
+                        currentUserBubble = null;
+                        conversationMessages.push({ sender: 'user', text: userText, ts: new Date().toISOString() });
+                    } else {
+                        if (isAllowedLanguage(userText)) addMessage(userText, false);
+                    }
+                    updateVoiceStatus("Thinking... ", "thinking");
+                }
+                /* ============ END MODIFICATION ============ */
+
+                if (msg.type === "user_empty") {
+                    if (currentUserBubble) { currentUserBubble.remove(); currentUserBubble = null; }
+                }
+
+                if (msg.type === "bot_text") {
+                    addMessage(msg.text, true);
+                    hasGreeted = true;
+                }
+
+                if (msg.type === "bot_table") {
+                    removeTypingIndicator();
+                    try {
+                        const rowsRaw = Array.isArray(msg.rows) ? msg.rows : (msg.rows || []).split('\n');
+
+                        const parsed = rowsRaw.map(r => {
+                            if (Array.isArray(r)) return r.map(c => (''+c).trim());
+                            const str = (''+r).trim();
+                            if (!str) return [];
+
+                            let cols = str.split('|').map(s => s.trim()).filter(s=>s!=='');
+                            if (cols.length <= 1) cols = str.split('\t').map(s => s.trim()).filter(s=>s!=='');
+                            if (cols.length <= 1) cols = str.split(/\s{2,}/).map(s => s.trim()).filter(s=>s!=='');
+                            if (cols.length <= 1) cols = str.split(',').map(s => s.trim()).filter(s=>s!=='');
+                            if (cols.length <= 1) cols = [str];
+                            return cols;
+                        }).filter(r=>Array.isArray(r) && r.length>0);
+
+                        if (parsed.length === 0) {
+                            renderTableMessage({ title: null, columns: ['Information'], rows: [], note: null });
+                            return;
+                        }
+
+                        const fillerRe = /^(sure|ok|okay|hello|hi|thanks|thank you|please)[.!\s]*$/i;
+                        const cleaned = parsed.filter(r => {
+                            if (r.length === 1) {
+                                const v = (r[0]||'').trim();
+                                if (!v) return false;
+                                if (/^[^A-Za-z0-9]+$/.test(v)) return false;
+                                if (fillerRe.test(v)) return false;
+                            }
+                            return true;
+                        });
+
+                        const maxCols = Math.max(...cleaned.map(r=>r.length));
+                        const rowsPadded = cleaned.map(r => {
+                            const arr = r.slice();
+                            while (arr.length < maxCols) arr.push('-');
+                            return arr.map(c => c === '' ? '-' : c);
+                        });
+
+                        let columns = [];
+                        let body = [];
+                        if (rowsPadded.length > 0 && rowsPadded[0].length > 1) {
+                            columns = rowsPadded[0];
+                            body = rowsPadded.slice(1);
+                        } else {
+                            columns = ['Information'];
+                            body = rowsPadded.map(r => [r.join(' ')]);
+                        }
+
+                        renderTableMessage({ title: null, columns: columns, rows: body, note: null });
+                    } catch (err) {
+                        console.error('Error rendering bot_table:', err);
+                        addMessage(msg.raw || msg.rows.join('\n'), true);
+                    }
+                    return;
+                }
+
+                if (msg.type === "interrupt") { interruptBot(); }
+
+            } catch (innerErr) {
+                console.error("Error processing voiceSocket message:", innerErr);
+            }
+        };
+
+        voiceSocket.onclose = (ev) => {
+            console.warn("voiceSocket closed:", ev);
+            if (isCallActive) endCall();
+        };
+
+        voiceSocket.onerror = (ev) => {
+            console.error("voiceSocket runtime error:", ev);
+            addMessage("Voice connection error. See console for details.", true);
+            if (isCallActive) endCall();
+        };
+
+    } catch (err) {
+        console.error("Failed to establish voice websocket:", err);
+        updateVoiceStatus("Voice WS failed", "");
+        addMessage("Unable to connect voice socket: " + (err && err.message ? err.message : err), true);
+
+        try { if (voiceSocket && (voiceSocket.readyState === WebSocket.OPEN || voiceSocket.readyState === WebSocket.CONNECTING)) voiceSocket.close(); } catch(e){}
+
+        isCallActive = false;
+        btnCall.style.display = "flex";
+        btnsActive.forEach(b => b.style.display = "none");
+        return;
+    }
+}
+
+
+
+function terminateAgentCall() {
+    if (humanAgentSession) {
+        try {
+            humanAgentSession.dispose(); 
+        } catch (error) {
+            console.error("❌ Hangup error:", error);
+        }
+        humanAgentSession = null;
+
+        addMessage("Call Disconnected from Ankit.", true);
+
+        setAIControlsEnabled(true);
+
+        const brain = document.getElementById("brain-visualizer");
+        brain.className = "brain-blob";
+        btnCall.style.display = "flex";
+        btnsActive.forEach(b => b.style.display = "none");
+        scrollToBottom();
+    }
+}
+
+function visualizeRemoteStream(stream) {
+    if (!stream) return;
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    function update() {
+        if (!humanAgentSession) return;
+
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+        let average = sum / dataArray.length;
+
+        const brain = document.getElementById("brain-visualizer");
+        if (average > 10) {
+            brain.classList.add("speaking");
+            const agentBubble = document.querySelector(".agent-pulse");
+            if (agentBubble) agentBubble.style.transform = `scale(${1 + average/200})`;
+        } else {
+            brain.classList.remove("speaking");
+        }
+
+        requestAnimationFrame(update);
+    }
+    update();
+}
+
+function initiateWebRTCCall(extension) {
+    console.log("📞 Calling Agent on Extension:", extension);
+
+    const userAgent = new SIP.UserAgent({
+        uri: SIP.UserAgent.makeURI(SIP_CFG.uri),
+        transportOptions: {
+            server: SIP_CFG.server
+        },
+        authorizationUsername: SIP_CFG.username,
+        authorizationPassword: SIP_CFG.password,
+        logLevel: "error"
+    });
+
+    userAgent.start().then(() => {
+        console.log("✅ SIP Agent Started");
+        const target = SIP.UserAgent.makeURI(`sip:${extension}@${SIP_CFG.domain}`);
+        
+        const inviter = new SIP.Inviter(userAgent, target);
+        
+        humanAgentSession = inviter;
+
+        const options = {
+            sessionDescriptionHandlerOptions: {
+                constraints: { audio: true, video: false },
+                peerConnectionOptions: {
+                    iceServers: [
+                        { urls: "stun:stun.l.google.com:19302" }
+                    ]
+                }
+            }
+        };
+
+        inviter.stateChange.addListener((newState) => {
+            console.log("📡 Call State Changed:", newState);
+
+            if (newState === SIP.SessionState.Established) {
+                console.log("✅ Call Connected! Setting up audio & UI...");
+
+                addMessage("Call Connected to Ankit.", true);
+                
+                setAIControlsEnabled(false);
+
+                let cleanMessages = [];
+                if (typeof conversationMessages !== 'undefined' && conversationMessages.length > 0) {
+                    cleanMessages = conversationMessages.map(msg => ({
+                        sender: msg.sender || "Unknown",
+                        text: msg.text || ""
+                    }));
+                } else {
+                    cleanMessages = [{ sender: "System", text: "Call initiated directly to agent." }];
+                }
+
+                console.log("📤 Sending Payload to AI:", cleanMessages); 
+
+                const analysisPayload = {
+                    client_id: typeof clientId !== 'undefined' ? clientId : "unknown",
+                    tts: "google", 
+                    messages: cleanMessages 
+                };
+
+                fetch('save_conversation.php', {  
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(analysisPayload)
+                })
+                .then(response => response.json())
+                .then(analysisData => {
+                    console.log("🧠 AI Response:", analysisData); 
+
+                    const aiSummary = analysisData.summary && analysisData.summary !== "" ? analysisData.summary : "Summary not generated.";
+                    const aiSentiment = analysisData.sentiment && analysisData.sentiment !== "" ? analysisData.sentiment : "Neutral";
+                    
+                    const rawTranscript = cleanMessages.map(m => `${m.sender}: ${m.text}`).join("\n");
+                    const enrichedChatHistory = `Sentiment: ${aiSentiment}\nSummary: ${aiSummary}\n--- TRANSCRIPT ---\n${rawTranscript}`;
+
+                    const vicidialApiUrl = DIALER_CFG.nonAgentApiUrl;
+                    
+                    const params = new URLSearchParams({
+                        user: DIALER_CFG.apiUser,
+                        pass: DIALER_CFG.apiPass,
+                        chat_history: enrichedChatHistory 
+                    });
+
+                    return fetch(`${vicidialApiUrl}?${params.toString()}`);
+                })
+                .then(response => response.text())
+                .then(data => console.log("📊 Vicidial Sync Result:", data))
+                .catch(err => console.error("❌ Sync Failed:", err));
+
+                const pc = inviter.sessionDescriptionHandler.peerConnection;
+                const remoteStream = new MediaStream();
+                
+                const playAndAnimateStream = () => {
+                    const remoteAudio = new Audio();
+                    remoteAudio.srcObject = remoteStream;
+                    remoteAudio.autoplay = true;
+                    remoteAudio.style.display = "none"; 
+                    document.body.appendChild(remoteAudio); 
+
+                    remoteAudio.play().catch(e => {
+                        console.error("❌ Audio Autoplay Blocked:", e);
+                    });
+
+                    if (typeof visualizeRemoteStream === 'function') {
+                        visualizeRemoteStream(remoteStream);
+                    }
+                };
+
+                pc.getReceivers().forEach((receiver) => {
+                    if (receiver.track && receiver.track.kind === 'audio') {
+                        console.log("🎤 Found existing track:", receiver.track.id);
+                        remoteStream.addTrack(receiver.track);
+                    }
+                });
+
+                pc.ontrack = (event) => {
+                    console.log("🎤 New track arrived:", event.track.kind);
+                    if (event.track.kind === 'audio') {
+                        remoteStream.addTrack(event.track);
+                        playAndAnimateStream();
+                    }
+                };
+
+                if (remoteStream.getAudioTracks().length > 0) {
+                    playAndAnimateStream();
+                }
+            }
+
+            if (newState === SIP.SessionState.Terminated) {
+                console.log("❌ Call Terminated.");
+                terminateAgentCall();
+            }
+        });
+
+        inviter.invite(options); 
+        console.log("✅ Call Initiated!");
+
+    }).catch((error) => {
+        console.error("❌ Failed to connect to Asterisk:", error);
+    });
+}
+function setAIControlsEnabled(enabled) {
+    const aiCallBtn = document.getElementById("btn-call");
+    const aiSendBtn = document.getElementById("btn-send");
+    const chatInput = document.getElementById("chat-input");
+
+    if (enabled) {
+        aiCallBtn.style.opacity = "1";
+        aiCallBtn.style.pointerEvents = "all";
+        aiSendBtn.style.opacity = "1";
+        aiSendBtn.style.pointerEvents = "all";
+        chatInput.disabled = false;
+        chatInput.placeholder = "Type a message...";
+    } else {
+        aiCallBtn.style.opacity = "0.5";
+        aiCallBtn.style.pointerEvents = "none";
+        aiSendBtn.style.opacity = "0.5";
+        aiSendBtn.style.pointerEvents = "none";
+        chatInput.disabled = true;
+        chatInput.placeholder = "AI disabled during agent call...";
+    }
+}
+
+async function startMicrophone() {
+    try {
+        if (!mixCtx || mixCtx.state === 'closed') {
+            mixCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+            console.log("mixCtx created, sampleRate:", mixCtx.sampleRate);
+        }
+
+        if (!mixDest) {
+            mixDest = mixCtx.createMediaStreamDestination();
+            console.log("mixDest created");
+        }
+
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        console.log("micStream obtained");
+
+        try {
+            const micSourceForRecord = mixCtx.createMediaStreamSource(micStream);
+            micSourceForRecord.connect(mixDest);
+            console.log("mic connected to mixDest (recording only)");
+        } catch (e) {
+            console.warn("Could not create mixCtx MediaStreamSource for recording:", e);
+        }
+
+        if (!micCtx || micCtx.state === 'closed') {
+            micCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            console.log("micCtx (proc) created sampleRate:", micCtx.sampleRate);
+        }
+
+        try {
+            const micProcSource = micCtx.createMediaStreamSource(micStream);
+            processor = micCtx.createScriptProcessor(4096, 1, 1);
+            processor.onaudioprocess = (e) => {
+                if (!voiceSocket || voiceSocket.readyState !== WebSocket.OPEN || isMuted) return;
+                const input = e.inputBuffer.getChannelData(0);
+                const pcm16 = new Int16Array(input.length);
+                for (let i = 0; i < input.length; i++) {
+                    const s = Math.max(-1, Math.min(1, input[i]));
+                    pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+                }
+                try { voiceSocket.send(pcm16.buffer); } catch (err) { /* ignore send errors */ }
+            };
+
+            const silentGain = micCtx.createGain();
+            silentGain.gain.value = 0;
+            processor.connect(silentGain);
+            silentGain.connect(micCtx.destination);
+
+            micProcSource.connect(processor);
+            console.log("processor (global) set up for server PCM sending at 16k");
+        } catch (procErr) {
+            console.error("processor setup failed:", procErr);
+        }
+
+        if (!mixedRecordingActive) startMixedRecorder();
+
+        console.log("startMicrophone completed");
+    } catch (err) {
+        console.error("startMicrophone error:", err);
+        throw err;
+    }
+}
+
+function startMixedRecorder() {
+    if (!mixDest) {
+        console.warn("startMixedRecorder: mixDest missing");
+        return;
+    }
+    if (mediaRecorder && mixedRecordingActive) {
+        console.log("Mixed recorder already running");
+        return;
+    }
+
+    recordedChunks = [];
+    let mime = 'audio/webm;codecs=opus';
+    if (!MediaRecorder.isTypeSupported(mime)) {
+        mime = 'audio/webm';
+        if (!MediaRecorder.isTypeSupported(mime)) mime = '';
+    }
+
+    try {
+        mediaRecorder = mime ? new MediaRecorder(mixDest.stream, { mimeType: mime }) : new MediaRecorder(mixDest.stream);
+    } catch (e) {
+        console.error("MediaRecorder init failed:", e);
+        mediaRecorder = null;
+        return;
+    }
+
+    mediaRecorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) {
+            recordedChunks.push(ev.data);
+            console.log("ondataavailable: chunk received, size=", ev.data.size, "total chunks=", recordedChunks.length);
+        } else {
+            console.log("ondataavailable: empty chunk");
+        }
+    };
+
+    mediaRecorder.onstart = () => {
+        mixedRecordingActive = true;
+        console.log("mediaRecorder started, mimeType:", mediaRecorder.mimeType);
+    };
+
+    mediaRecorder.onstop = () => {
+        mixedRecordingActive = false;
+        console.log("mediaRecorder stopped, recordedChunks:", recordedChunks.length);
+    };
+
+    mediaRecorder.onerror = (e) => {
+        console.error("mediaRecorder error:", e);
+    };
+
+    try {
+        mediaRecorder.start(1000);
+    } catch (e) {
+        console.error("mediaRecorder.start failed:", e);
+    }
+}
+
+function stopMixedRecorderAndGetBlob(timeoutMs = 5000) {
+    return new Promise((resolve) => {
+        if (!mediaRecorder && recordedChunks.length === 0) {
+            console.warn("stopMixedRecorderAndGetBlob: no mediaRecorder and no chunks");
+            return resolve(null);
+        }
+
+        let finished = false;
+        const onceDone = (blob) => {
+            if (finished) return;
+            finished = true;
+            recordedChunks = [];
+            mediaRecorder = null;
+            mixedRecordingActive = false;
+            resolve(blob);
+        };
+
+        if (!mediaRecorder && recordedChunks.length > 0) {
+            try {
+                const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                console.log("stopMixedRecorderAndGetBlob: created blob from recordedChunks fallback, size:", blob.size);
+                return onceDone(blob);
+            } catch (e) {
+                console.error("fallback blob creation failed:", e);
+                return onceDone(null);
+            }
+        }
+
+        mediaRecorder.onstop = () => {
+            try {
+                const blob = new Blob(recordedChunks, { type: mediaRecorder && mediaRecorder.mimeType ? mediaRecorder.mimeType : 'audio/webm' });
+                console.log("mediaRecorder.onstop: blob size:", blob.size);
+                onceDone(blob);
+            } catch (e) {
+                console.error("Error building blob on onstop:", e);
+                onceDone(null);
+            }
+        };
+
+        try {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                console.log("mediaRecorder.stop() called");
+            } else {
+                if (recordedChunks.length > 0) {
+                    const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    return onceDone(blob);
+                }
+                return onceDone(null);
+            }
+        } catch (e) {
+            console.warn("stopMixedRecorderAndGetBlob: stop() threw:", e);
+            setTimeout(() => {
+                if (recordedChunks.length > 0) {
+                    const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    return onceDone(blob);
+                }
+                onceDone(null);
+            }, 500);
+        }
+
+        setTimeout(() => {
+            if (!finished) {
+                console.warn("stopMixedRecorderAndGetBlob: timeout, using fallback");
+                if (recordedChunks.length > 0) {
+                    const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+                    onceDone(blob);
+                } else {
+                    onceDone(null);
+                }
+            }
+        }, timeoutMs);
+    });
+}
+
+async function uploadConversationRecordingBlob(blob) {
+    if (!blob) {
+        console.warn("No recording blob to upload.");
+        return null;
+    }
+    try {
+        const fd = new FormData();
+        fd.append('conversation_id', conversationId || '');
+        const filename = `amelia_recording_${conversationId || 'nocid'}_${Date.now()}.webm`;
+        fd.append('file', blob, filename);
+
+        const resp = await fetch(`${API_BASE_URL}/save_recording.php`, {
+            method: 'POST',
+            body: fd,
+        });
+
+        const json = await resp.json().catch(() => null);
+        if (!resp.ok) {
+            console.error("Recording upload failed", resp.status, json);
+            return { ok: false, status: resp.status, body: json };
+        }
+        console.log("Recording uploaded:", json);
+        return json;
+    } catch (err) {
+        console.error("Upload recording failed", err);
+        return { ok: false, error: err.message || err };
+    }
+}
+
+/* ============ MODIFIED: endCall with digit mode reset ============ */
+async function endCall() {
+    try {
+        try { interruptBot(); } catch(e){ console.warn("endCall: interruptBot failed:", e); }
+        if (voiceSocket) {
+            try { voiceSocket.close(); } catch (e) { console.warn("voiceSocket close failed:", e); }
+            voiceSocket = null;
+        }
+
+        const blob = await stopMixedRecorderAndGetBlob(8000);
+
+        if (blob) {
+            const uploadingDiv = document.createElement('div');
+            uploadingDiv.className = 'message bot-msg upload-result upload-pending';
+            uploadingDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving call recording...';
+            chatBox.appendChild(uploadingDiv);
+            scrollToBottom();
+
+            const uploadResult = await uploadConversationRecordingBlob(blob);
+
+            uploadingDiv.remove();
+
+            scrollToBottom();
+        } else {
+            console.warn("No blob captured to upload.");
+        }
+    } catch (e) {
+        console.error("Error while stopping/ uploading recording:", e);
+    } finally {
+        try { if (micStream) micStream.getTracks().forEach(t => t.stop()); } catch(e){}
+        try { if (processor) { try { processor.disconnect(); } catch(e){} } } catch(e){}
+        try { if (micCtx) await micCtx.close(); } catch(e){}
+        try { if (speakerCtx) await speakerCtx.close(); } catch(e){}
+        
+        /* ============ ADDED: Reset digit mode ============ */
+        expectingDigits = false;
+        digitBuffer = "";
+        /* ============ END ADDITION ============ */
+        
+        isCallActive = false;
+        isMuted = false;
+        btnMute.classList.remove("muted");
+        const icon = btnMute.querySelector("i");
+        if (icon) {
+            icon.classList.remove("fa-microphone-slash");
+            icon.classList.add("fa-microphone");
+        }
+        btnsActive.forEach(b => b.style.display = "none");
+        btnCall.style.display = "flex";
+        statusBadge.innerText = "Offline";
+        statusBadge.className = "status-badge";
+        brain.className = "brain-blob";
+
+        if (conversationMessages.length > 0) {
+            await saveConversation();
+        }
+    }
+}
+/* ============ END MODIFICATION ============ */
+
+function playPCM16(pcm16) {
+    audioQueue.push(pcm16);
+    if (!isPlaying) playNext();
+}
+
+function playNext() {
+    if (audioQueue.length === 0) {
+        isPlaying = false;
+        updateVoiceStatus("Listening... ", "listening");
+        return;
+    }
+    isPlaying = true;
+    updateVoiceStatus("Speaking... ", "speaking");
+
+    const pcm16 = audioQueue.shift();
+    const float32 = new Float32Array(pcm16.length);
+    for (let i = 0; i < pcm16.length; i++) float32[i] = pcm16[i] / 32768;
+
+    if (!mixCtx || mixCtx.state === "closed") {
+        mixCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+        console.log("playNext: recreated mixCtx, sampleRate:", mixCtx.sampleRate);
+    }
+
+    if (!mixDest) {
+        mixDest = mixCtx.createMediaStreamDestination();
+        console.log("playNext: created late mixDest");
+        if (micStream) {
+            try {
+                const micSource = mixCtx.createMediaStreamSource(micStream);
+                micSource.connect(mixDest);
+                console.log("playNext: reconnected mic to new mixDest (recording-only)");
+            } catch (e) { console.warn("playNext: reconnection of mic failed:", e); }
+        }
+        if (!mixedRecordingActive) startMixedRecorder();
+    }
+
+    const buffer = mixCtx.createBuffer(1, float32.length, mixCtx.sampleRate);
+    buffer.copyToChannel(float32, 0, 0);
+
+    const src = mixCtx.createBufferSource();
+    currentSource = src;
+    src.buffer = buffer;
+    src.connect(mixCtx.destination);
+    try { src.connect(mixDest); } catch(e) { console.warn("src.connect(mixDest) failed:", e); }
+
+    src.start();
+    src.onended = () => {
+    if (currentSource === src) currentSource = null;
+    playNext();
+};
+}
+
+function interruptBot() {
+    try {
+        if (currentSource) {
+            try { currentSource.onended = null; } catch(e) {}
+            try { currentSource.stop(); } catch (e) { /* ignore */ }
+            currentSource = null;
+        }
+    } catch (e) {
+        console.warn("interruptBot: error stopping currentSource:", e);
+    }
+
+    audioQueue = [];
+    isPlaying = false;
+
+    updateVoiceStatus("Listening... ", "listening");
+}
+
+
+function toggleMute() {
+    isMuted = !isMuted;
+    const icon = btnMute.querySelector("i");
+    if (isMuted) {
+        btnMute.classList.add("muted");
+        icon.classList.remove("fa-microphone");
+        icon.classList.add("fa-microphone-slash");
+        if (micStream) micStream.getAudioTracks()[0].enabled = false;
+    } else {
+        btnMute.classList.remove("muted");
+        icon.classList.remove("fa-microphone-slash");
+        icon.classList.add("fa-microphone");
+        if (micStream) micStream.getAudioTracks()[0].enabled = true;
+    }
+}
+
+/* ==========================================================
+   5. UPLOAD LOGIC
+   ========================================================== */
+let selectedFiles = [];
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+function handleBotUploadTrigger(message) {
+    const botMsgDiv = document.createElement("div");
+    botMsgDiv.classList.add("message", "bot-msg");
+    chatBox.appendChild(botMsgDiv);
+    const messageText = document.createElement("span");
+    messageText.innerHTML = message;
+    botMsgDiv.appendChild(messageText);
+    botMsgDiv.appendChild(document.createElement("br"));
+    botMsgDiv.appendChild(document.createElement("br"));
+    const uploadBtn = document.createElement('button');
+    uploadBtn.className = 'upload-chat-btn';
+    uploadBtn.innerHTML = '<i class="fa-solid fa-file-upload"></i> Upload Cheque Now';
+    uploadBtn.onclick = () => { showUploadModal(); };
+    botMsgDiv.appendChild(uploadBtn);
+    scrollToBottom();
+}
+
+function showUploadModal() {
+    generateTicket();
+    document.getElementById('upload-overlay').style.display = 'block';
+    document.getElementById('upload-modal').style.display = 'block';
+}
+function hideUploadModal() {
+    document.getElementById('upload-overlay').style.display = 'none';
+    document.getElementById('upload-modal').style.display = 'none';
+    resetUploadForm();
+}
+function resetUploadForm() {
+    selectedFiles = [];
+    updateFileList();
+    document.getElementById('validation-result').style.display = 'none';
+    document.getElementById('validation-result').innerHTML = '';
+    document.getElementById('upload-btn').disabled = false;
+    document.getElementById('upload-btn').innerHTML = 'Validate';
+}
+
+function handleDragOver(e) { e.preventDefault(); e.stopPropagation(); document.getElementById('drop-area').classList.add('dragover'); }
+function handleDragLeave(e) { e.preventDefault(); e.stopPropagation(); document.getElementById('drop-area').classList.remove('dragover'); }
+function handleDrop(e) { e.preventDefault(); e.stopPropagation(); document.getElementById('drop-area').classList.remove('dragover'); handleFiles(e.dataTransfer.files); }
+function handleFileSelect(e) { handleFiles(e.target.files); }
+
+function handleFiles(files) {
+    for (let file of files) {
+        if (file.size > MAX_FILE_SIZE) { alert(`File "${file.name}" is too large. Max 10MB.`); continue; }
+        if (!file.type.match('image.*') && !file.name.toLowerCase().endsWith('.pdf')) { alert(`File "${file.name}" is not an image or PDF.`); continue; }
+        if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) { selectedFiles.push(file); updateFileList(); }
+    }
+}
+
+function updateFileList() {
+    const fileList = document.getElementById('file-list');
+    fileList.innerHTML = '';
+    if (selectedFiles.length === 0) { fileList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 10px;">No files selected</p>'; return; }
+    selectedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.className = 'file-item';
+        fileItem.innerHTML = `<div><strong style="color: var(--text-primary); font-size: 14px;">${file.name}</strong><div style="color: var(--text-secondary); font-size: 11px;">${(file.size / 1024).toFixed(2)} KB</div></div><button onclick="removeFile(${index})" style="background: none; border: none; color: #ff3b30; cursor: pointer; padding: 5px;"><i class="fa-solid fa-trash"></i></button>`;
+        fileList.appendChild(fileItem);
+    });
+}
+function removeFile(index) { selectedFiles.splice(index, 1); updateFileList(); }
+
+async function uploadFiles() {
+    if (selectedFiles.length === 0) { addMessage("❌ Please select at least one cheque image.", true); return; }
+    const uploadBtn = document.getElementById('upload-btn');
+    uploadBtn.disabled = true; uploadBtn.innerHTML = '<div class="spinner"></div>';
+    const resultDiv = document.getElementById('validation-result');
+    resultDiv.style.display = 'none';
+    const uploadPendingDiv = document.createElement('div');
+    uploadPendingDiv.className = 'message bot-msg upload-result upload-pending';
+    uploadPendingDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Uploading and validating cheque...';
+    chatBox.appendChild(uploadPendingDiv);
+    scrollToBottom();
+
+    for (let file of selectedFiles) {
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/validate-cheque`, { method: 'POST', body: formData });
+            const data = await response.json();
+            uploadPendingDiv.remove();
+            const resultDivChat = document.createElement('div');
+            resultDivChat.className = data.success ? 'message bot-msg upload-result upload-success' : 'message bot-msg upload-result upload-error';
+            resultDivChat.innerHTML = `<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">${data.success ? '' : ''} <strong>${data.success ? 'Valid Cheque' : 'Invalid Cheque'}</strong></div><div style="font-size: 13px;">${data.message}</div>${data.details ? `<div style="margin-top: 8px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 5px; font-size: 12px;">${data.details.micr ? `<div>MICR: ${data.details.micr}</div>` : ''}${data.details.amount ? `<div>Amount: ₹${data.details.amount}</div>` : ''}</div>` : ''}`;
+            chatBox.appendChild(resultDivChat);
+            addMessage(`✅ Uploaded cheque: ${file.name}`, false);
+            if (data.success) { setTimeout(() => { hideUploadModal(); }, 3000); }
+        } catch (error) {
+            console.error('Upload error:', error);
+            uploadPendingDiv.remove();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'message bot-msg upload-result upload-error';
+            errorDiv.innerHTML = `<div>❌ <strong>Upload Failed</strong></div><div style="font-size: 13px;">Error: ${error.message || 'Network error'}</div>`;
+            chatBox.appendChild(errorDiv);
+        }
+    }
+    uploadBtn.disabled = false; uploadBtn.innerHTML = 'Validate';
+    scrollToBottom();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => { document.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false); });
+    document.getElementById('kyc-overlay').addEventListener('click', function(e) { if (e.target.id === 'kyc-overlay') closeKycModal(); });
+});
+
+/* ==========================================================
+   6. KYC LOGIC
+      ========================================================== */
+        let kycMediaRecorder = null;
+        let kycRecordedChunks = [];
+        let kycTimerInterval = null;
+        let kycSecondsLeft = 3;
+        let kycStream = null;
+        let kycSessionId = null;
+        let isKycRecording = false;
+
+        function handleKycTrigger(message) {
+            console.log("check handleKycTrigger")
+            setTimeout(()=>{
+                    const botMsgDiv = document.createElement("div");
+            botMsgDiv.classList.add("message", "bot-msg");
+            chatBox.appendChild(botMsgDiv);
+            const messageText = document.createElement("span");
+            // messageText.innerHTML = message;
+            botMsgDiv.appendChild(messageText);
+            // botMsgDiv.appendChild(document.createElement("br"));
+            // botMsgDiv.appendChild(document.createElement("br"));
+            const kycBtn = document.createElement('button');
+            kycBtn.className = 'upload-chat-btn';
+            kycBtn.innerHTML = '<i class="fa-solid fa-video"></i> Initiate Video KYC';
+            kycBtn.onclick = openKycModal;
+            botMsgDiv.appendChild(kycBtn);
+            },2500)
+            
+            scrollToBottom();
+        }
+
+    let currentStep = 1;
+    let kycFiles = {
+    national_id: null,
+    passport: null,
+    address_proof: null
+};
+
+function handleUpload() {
+    const fileInput = document.getElementById('usDocUpload');
+    const headerTitle = document.getElementById('kycHeaderTitle');
+    const stepDescription = document.querySelector('#upload-step-area p');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+
+    if (fileInput.files.length > 0) {
+        const selectedFile = fileInput.files[0];
+        console.log(`Step ${currentKycStep} file captured: ${selectedFile.name}`);
+
+        if (currentKycStep === 1) {
+            kycFiles.national_id = selectedFile;
+            currentKycStep = 2;
+            headerTitle.innerText = "Step 2: Upload Passport";
+            stepDescription.innerText = "Now please upload a clear photo of your Passport";
+        } 
+        else if (currentKycStep === 2) {
+            kycFiles.passport = selectedFile;
+            currentKycStep = 3;
+            headerTitle.innerText = "Step 3: Proof of Address";
+            stepDescription.innerText = "Almost done! Upload your Utility Bill or Address Proof";
+        } 
+        else if (currentKycStep === 3) {
+            kycFiles.address_proof = selectedFile;
+            document.getElementById('upload-step-area').style.display = "none";
+            document.getElementById('video-step-container').style.display = "block";
+            headerTitle.innerText = "Step 4: Biometric Verification";
+            startKycCamera(); 
+            return;
+        }
+
+        fileInput.value = "";
+        fileNameDisplay.innerText = "";
+    }
+}
+
+        function appendKycToChat(videoBlob, idBase64, passportBase64, resultData) {
+    const chatArea = document.getElementById('chat-scroll-area');
+    const videoURL = URL.createObjectURL(videoBlob);
+    
+    console.log(resultData);
+    
+    const v = resultData.verification || {}; 
+    const isSuccess = v.status === "Verified";
+
+    const entered = resultData.entered_details || {};
+    
+    let firstName = entered.first_name || "";
+    let lastName = entered.last_name || "";
+    
+    if (firstName.includes("Last Name:")) {
+        firstName = firstName.split()[0];
+    }
+    if (lastName.includes("Mobile:")) {
+        lastName = lastName.split()[0];
+    }
+    
+    const enteredName = `${firstName} ${lastName}`.trim();
+    const extractedName = (v.person_data && v.person_data.name) ? v.person_data.name : "";
+    
+    function normalizeName(str) {
+        return (str || "").toLowerCase()
+            .replace(/[^a-z0-9\s]/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+    
+    function nameMatches(entered, extracted) {
+        if (!entered || !extracted || extracted === "Not Detected") return false;
+        
+        const normalizedEntered = normalizeName(entered);
+        const normalizedExtracted = normalizeName(extracted);
+        
+        return normalizedExtracted.includes(normalizedEntered) || 
+               normalizedEntered.includes(normalizedExtracted);
+    }
+    
+    const nameMatch = nameMatches(enteredName, extractedName);
+    const nameMatchStatus = enteredName ? (nameMatch ? '✅ Matched' : '❌ Not Matched') : 'Not Provided';
+    const kycHTML = `
+    <div class="message bot-message kyc-report" style="border: 1px solid ${isSuccess ? '#2ecc71' : '#e74c3c'}; padding: 15px; border-radius: 12px; background: #fff; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 300px; margin: 10px 0;">
+
+        <div class="kyc-header" style="font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 8px; margin-bottom: 10px; color: ${isSuccess ? '#27ae60' : '#c0392b'}; display: flex; align-items: center; gap: 5px;">
+            ${isSuccess ? '✅ KYC Verification Passed' : '❌ KYC Verification Failed'}
+        </div>
+
+        <div class="kyc-preview-grid" style="display: flex; gap: 8px; margin-bottom: 12px;">
+            <div class="kyc-item" style="flex: 1; text-align: center;">
+                <span style="font-size: 9px; color: #888; display: block; margin-bottom: 4px;">National ID</span>
+                <img src="${idBase64}" style="width: 100%; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+            </div>
+            <div class="kyc-item" style="flex: 1; text-align: center;">
+                <span style="font-size: 9px; color: #888; display: block; margin-bottom: 4px;">Passport</span>
+                <img src="${passportBase64 || 'https://via.placeholder.com/60?text=No+Pass'}" style="width: 100%; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+            </div>
+        </div>
+
+        <div class="kyc-video-preview" style="margin-bottom: 12px;">
+            <span style="font-size: 9px; color: #888; display: block; margin-bottom: 4px;">Recorded V-KYC Stream:</span>
+            <video src="${videoURL}" controls style="width: 100%; border-radius: 6px; background: #000; border: 1px solid #eee;"></video>
+        </div>
+
+        <div class="kyc-footer" style="font-size: 11px; background: #f9f9f9; padding: 8px; border-radius: 6px;">
+            <div style="color: black; margin-bottom: 4px;" >
+                <b>Face Match:</b> 
+                <span style="color: ${v.face_match ? '#27ae60' : '#c0392b'}">
+                    ${v.face_match ? 'Matched' : 'Failed'} (${v.face_confidence || 0}%)
+                </span>
+            </div>
+
+            <div style="color: black; margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ddd;">
+                <b>Entered Name:</b> 
+                <span style="color: ${nameMatch ? '#27ae60' : '#e74c3c'}; font-weight: bold;">
+                    ${enteredName || 'Not Provided'}
+                </span><br>
+                <b>Name Match Status:</b> 
+                <span style="color: ${nameMatch ? '#27ae60' : '#e74c3c'}; font-weight: bold;">
+                    ${nameMatchStatus}
+                </span>
+            </div>
+
+            ${(v.person_data && v.person_data.name && v.person_data.name !== "Not Detected") ? `
+            <div style="color: black; margin-bottom: 4px;">
+                <b>Detected Name:</b> ${v.person_data.name}
+            </div>
+            ` : ''}
+
+            ${(v.person_data && v.person_data.dob && v.person_data.dob !== "Not Detected") ? `
+            <div style="color: black; margin-bottom: 4px;">
+                <b>DOB:</b> ${v.person_data.dob}
+            </div>
+            ` : ''}
+            
+            <div style="color: black; margin-bottom: 2px;">
+                <b>${v.id_data?.type || 'ID'}:</b> ${v.id_data?.number || 'Not Detected'}
+            </div>
+            
+            <div style="color: black; margin-bottom: 2px;">
+                <b>Passport:</b> ${v.passport_data?.number || 'Not Detected'}
+            </div>
+
+            ${!isSuccess ? `
+                <div style="color: #e74c3c; margin-top:8px; font-weight:bold; border-top: 1px dashed #ddd; padding-top: 5px;">
+                    Reason: ${v.message || 'Verification Failed'}
+                </div>
+            ` : ''}
+            
+            <div style="margin-top: 8px; color: #888; font-size: 9px; display: flex; justify-content: space-between;">
+                <span>USA Compliance</span>
+                <span>${new Date().toLocaleTimeString()}</span>
+            </div>
+        </div>
+    </div>`;
+
+    chatArea.insertAdjacentHTML('beforeend', kycHTML);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+        function openKycModal() {
+    generateTicket();
+    kycSessionId = 'doc_' + Date.now();
+    document.getElementById('kyc-overlay').style.display = 'block';
+    document.getElementById('kyc-modal').style.display = 'block';
+
+    document.getElementById('upload-step-area').style.display = 'block';
+    document.getElementById('video-step-container').style.display = 'none';
+    document.getElementById('usDocUpload').value = "";
+    document.getElementById('fileNameDisplay').innerText = "";
+
+    currentKycStep = 1;
+    document.getElementById('kycHeaderTitle').innerText = "Step 1: Upload National ID";
+    document.querySelector('#upload-step-area p').innerText = "Please upload a clear photo of your National ID";
+}
+
+        function closeKycModal() {
+            if (isKycRecording) {
+                if (kycMediaRecorder && kycMediaRecorder.state === 'recording') { kycMediaRecorder.stop(); }
+                clearInterval(kycTimerInterval);
+            }
+            stopKycCamera();
+            document.getElementById('kyc-overlay').style.display = 'none';
+            document.getElementById('kyc-modal').style.display = 'none';
+            resetKyc();
+        }
+
+        async function startKycCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' }, audio: false });
+                kycStream = stream;
+                document.getElementById('kycVideo').srcObject = stream;
+            } catch (error) {
+                updateKycStatus('❌ Cannot access camera.', 'error');
+                setTimeout(() => { addMessage('❌ Camera access failed.', true); closeKycModal(); }, 2000);
+            }
+        }
+        function stopKycCamera() { if (kycStream) { kycStream.getTracks().forEach(track => track.stop()); kycStream = null; } }
+
+
+let isKycPaused = false;
+
+
+function startKycRecording() {
+    if (!kycStream) return;
+    kycRecordedChunks = [];
+    kycSecondsLeft = 6;
+    isKycRecording = true;
+    // Liveness challenge: the server checks that the head really turns (a photo cannot do that).
+    const stepText = document.getElementById('currentStepDisplay');
+    const challenge = (left) => left > 4 ? "Look straight at the camera" : left > 2 ? "Slowly turn your head LEFT" : "Now slowly turn your head RIGHT";
+    stepText.textContent = challenge(kycSecondsLeft);
+
+    const cardOverlay = document.getElementById('cardOverlay');
+    const stepBubble = document.getElementById('stepBubble');
+    const kycTimer = document.getElementById('kycTimer');
+    const recordBtn = document.getElementById('recordBtn');
+
+    // Show the instruction big, on top of the video, so nobody misses it.
+    stepBubble.style.cssText += ";top:auto;bottom:10px;left:50%;right:auto;transform:translateX(-50%);font-size:18px;font-weight:700;padding:8px 16px;white-space:nowrap";
+    stepBubble.textContent = challenge(kycSecondsLeft);
+    stepText.style.fontSize = "20px";
+
+    cardOverlay.style.display = 'block';
+    stepBubble.style.display = 'block';
+    recordBtn.style.display = 'none';
+    kycTimer.textContent = kycSecondsLeft;
+
+    kycMediaRecorder = new MediaRecorder(kycStream, { mimeType: 'video/webm;codecs=vp9' });
+    kycMediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) kycRecordedChunks.push(event.data); };
+    kycMediaRecorder.onstop = async () => {
+        await processKycVideo();
+    };
+    kycMediaRecorder.start(100);
+
+    kycTimerInterval = setInterval(() => {
+        kycSecondsLeft--;
+        kycTimer.textContent = kycSecondsLeft;
+        if (kycSecondsLeft > 0) { stepText.textContent = challenge(kycSecondsLeft); stepBubble.textContent = challenge(kycSecondsLeft); }
+
+        if (kycSecondsLeft <= 0) {
+            setTimeout(()=>{
+                    closeKycModal()
+            },2000)
+            clearInterval(kycTimerInterval);
+            if (kycMediaRecorder && kycMediaRecorder.state === 'recording') { kycMediaRecorder.stop(); }
+            isKycRecording = false;
+        }
+    }, 1000);
+}
+
+        async function extractFramesFromVideo(blob, frameCount) {
+            const frames = [];
+            const video = document.createElement("video");
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            const videoUrl = URL.createObjectURL(blob);
+            video.src = videoUrl;
+            video.muted = true;
+
+            await new Promise((resolve) => {
+                video.onloadedmetadata = () => {
+                    if (!isFinite(video.duration) || video.duration === 0) {
+                        console.warn("Video duration is not finite, retrying...");
+                        video.currentTime = 1e101;
+                        video.ontimeupdate = () => {
+                            video.ontimeupdate = null;
+                            video.currentTime = 0;
+                            resolve();
+                        };
+                    } else {
+                        resolve();
+                    }
+                };
+            });
+
+            const duration = video.duration;
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+
+            const totalFramesToExtract = frameCount || 10;
+            const interval = isFinite(duration) ? (duration / totalFramesToExtract) : 0.5;
+
+            console.log(`Extracting ${totalFramesToExtract} frames. Duration: ${duration}, Interval: ${interval}`);
+
+            for (let i = 0; i < totalFramesToExtract; i++) {
+                const targetTime = i * interval;
+
+                if (isNaN(targetTime) || !isFinite(targetTime)) {
+                    targetTime = 0;
+                }
+                if (!isFinite(targetTime)) continue;
+                try {
+                    video.currentTime = targetTime;
+                } catch (err) {
+                    console.log(err)
+                }
+
+
+                await new Promise(resolve => {
+                    const handler = () => {
+                        video.removeEventListener("seeked", handler);
+                        resolve();
+                    };
+                    video.addEventListener("seeked", handler);
+                });
+
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                frames.push(canvas.toDataURL("image/jpeg", 0.7));
+            }
+
+            URL.revokeObjectURL(videoUrl);
+            return frames;
+        }
+
+
+
+        async function processKycVideo() {
+            addMessage('⏳ Processing KYC...', true);
+
+            if (!kycRecordedChunks.length) {
+                showKycSuccess("KYC completed (Simulated)");
+                return;
+            }
+
+            const videoBlob = new Blob(kycRecordedChunks, { type: 'video/webm' });
+
+            const frames = await extractFramesFromVideo(videoBlob, 10);
+            const docInput = document.getElementById('usDocUpload');
+            const docFile = docInput ? docInput.files[0] : null;
+
+            const formData = new FormData();
+            formData.append("session_id", kycSessionId);
+            formData.append("user_id", clientId);
+            console.log("KYC Submission - Client ID:", clientId);
+            console.log("Stored in localStorage:", localStorage.getItem("amelia_client_id"));
+            formData.append("video", videoBlob, "liveness.webm");
+            if (kycFiles.national_id) formData.append("national_id", kycFiles.national_id);
+            if (kycFiles.passport) formData.append("passport", kycFiles.passport);
+            if (kycFiles.address_proof) formData.append("address_proof", kycFiles.address_proof);
+
+            console.log(formData);
+            try {
+                
+                const response = await fetch(`${KYC_API_BASE_URL}/api/submit-kyc`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+                console.log(result);
+
+            
+                 
+          const idURL = kycFiles.national_id ? URL.createObjectURL(kycFiles.national_id) : '';
+
+       const passportURL = kycFiles.passport ? URL.createObjectURL(kycFiles.passport) : '';
+        appendKycToChat(videoBlob, idURL, passportURL, result);
+                
+                if (result.verification.status === "Verified") {
+                     showKycSuccess("Verification Successful");
+
+                } else {
+                    addMessage(result.message || "KYC verification failed. Your KYC verification is under review, kindly wait for 24 business hrs.!", true);
+                    setTimeout(() => {
+                        if (typeof closeKycModal === 'function') closeKycModal();
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error("Upload error:", error);
+                addMessage("Network Error: Could not upload video", true);
+            }
+        }
+           function showKycSuccess(message) {
+            document.getElementById('kycStatus').style.display = 'block';
+            document.getElementById('kycStatus').className = 'kyc-success';
+            document.getElementById('kycStatus').innerHTML = `<h4 style="margin: 0 0 10px 0; color: #00ff80;">✅ Verification Complete!</h4><p style="margin: 0;">${message}</p>`;
+            setTimeout(() => { closeKycModal(); setTimeout(() => { addMessage("Your KYC verification is under review, kindly wait for 24 business hrs.! ", true); }, 500); }, 3000);
+        }
+        function updateKycStatus(message, type) {
+            const statusDiv = document.getElementById('kycStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.className = `kyc-${type}`;
+            statusDiv.innerHTML = message;
+        }
+        function resetKyc() { kycRecordedChunks = []; if (kycTimerInterval) clearInterval(kycTimerInterval); kycSecondsLeft = 10; kycMediaRecorder = null; kycSessionId = null; isKycRecording = false; }
+
+
+
+        const canvas = document.getElementById("canvas");
+
+        let aadhaarSnapshot = null;
+        let panSnapshot = null;
+
+
+        
+let chatPaused = false;
+
+function setChatPaused(paused) {
+    chatPaused = !!paused;
+    const chatInput = document.getElementById("chat-input");
+    if (paused) {
+        chatInput.disabled = true;
+        chatInput.placeholder = "Chat paused while in voice...";
+    } else {
+        chatInput.disabled = false;
+        chatInput.placeholder = "Type a message...";
+    }
+}
+
+async function switchToChatFromVoice(reason = "User requested switch to chat") {
+    console.log("switchToChatFromVoice:", reason);
+    if (!isCallActive && (!voiceSocket || voiceSocket.readyState !== WebSocket.OPEN)) {
+        if (!isWidgetOpen) toggleWidget();
+        inputField.focus();
+        addMessage("Already in chat mode.", true);
+        setChatPaused(false);
+        return;
+    }
+
+    try {
+        conversationMessages.push({ sender: 'system', text: `Switched from voice to chat: ${reason}`, ts: new Date().toISOString() });
+        await endCall();
+    } catch (e) {
+        console.error("switchToChatFromVoice endCall error:", e);
+    }
+
+    setChatPaused(false);
+    if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) initChatSocket();
+    if (!isWidgetOpen) toggleWidget();
+    setTimeout(() => { inputField.focus(); }, 120);
+    addMessage("Switched to chat mode. Type your message.", true);
+
+    try { if (chatSocket && chatSocket.readyState === WebSocket.OPEN) chatSocket.send(JSON.stringify({ type:'system', event:'mode_change', mode:'chat' })); } catch(e) {}
+}
+
+async function switchToVoiceFromChat(reason = "User requested switch to voice") {
+    console.log("switchToVoiceFromChat:", reason);
+
+    if (isCallActive) {
+        addMessage("Already in voice call.", true);
+        return;
+    }
+
+    setChatPaused(true);
+    addMessage("Switching to voice mode... requesting mic permission if needed.", true);
+
+    try { if (chatSocket && chatSocket.readyState === WebSocket.OPEN) chatSocket.send(JSON.stringify({ type:'system', event:'mode_change', mode:'voice' })); } catch(e) {}
+
+    try {
+        conversationMessages.push({ sender: 'system', text: `Switched from chat to voice: ${reason}`, ts: new Date().toISOString() });
+        await startCall();
+        addMessage("Switched to voice mode. Speak now.", true);
+    } catch (err) {
+        console.error("switchToVoiceFromChat failed:", err);
+        setChatPaused(false);
+        addMessage("Could not switch to voice mode. Check microphone permissions.", true);
+    }
+}
+
+function handleFrontendAction(msg) {
+    if (!msg || !msg.action) return;
+
+    const id = msg.action_id || null;
+    if (id && processedFrontendActions.has(id)) return;
+    if (id) processedFrontendActions.add(id);
+
+    if (processingSwitch) {
+        console.log("Switch in progress — ignoring frontend_action:", msg.action);
+        return;
+    }
+
+    const act = msg.action;
+    const reason = msg.reason || "";
+    const source = msg.source || "server";
+    
+    const dest = msg.destination || msg.target || "1001";
+
+    if (act === "switch_to_voice") {
+        if (humanAgentSession) return;
+        if (isCallActive) return;
+
+        processingSwitch = true;
+        switchToVoiceFromChat(`auto:${source} ${reason}`)
+            .finally(() => processingSwitch = false);
+        return;
+    }
+
+    if (act === "switch_to_chat") {
+        if (!isCallActive && (!voiceSocket || voiceSocket.readyState !== WebSocket.OPEN)) return;
+
+        processingSwitch = true;
+        switchToChatFromVoice(`auto:${source} ${reason}`)
+            .finally(() => processingSwitch = false);
+        return;
+    }
+
+    if (act === "start_human_chat_call") {
+        console.log("🤐 Starting MUTED WebRTC call to:", dest);
+        
+        setAIControlsEnabled(false);
+        
+        if (isCallActive) endCall();
+
+        initiateTextModeCall(dest); 
+        return;
+    }
+
+    if (act === "call_agent") {
+        console.log("Transfer to agent (Voice Mode):", dest);
+
+        const transferDiv = document.createElement("div");
+        transferDiv.className = "message bot-msg agent-pulse";
+        transferDiv.innerHTML = `
+            <div><i class="fa-solid fa-headset"></i> <strong>Transferring call to human agent...</strong></div>
+            <div style="font-size:12px; margin-top:5px;">Please wait while we connect you.</div>
+            <button class="hangup-chat-btn" onclick="terminateAgentCall()">
+                <i class="fa-solid fa-phone-slash"></i> Hangup Agent Call
+            </button>
+        `;
+        chatBox.appendChild(transferDiv);
+        scrollToBottom();
+
+        setAIControlsEnabled(false);
+        initiateWebRTCCall(dest);
+        return;
+    }
+
+    if (act === "transfer") {
+        console.log("Chat -> received transfer:", dest);
+        setAIControlsEnabled(false);
+        initiateWebRTCCall(dest);
+        return;
+    }
+
+    console.log("Unhandled frontend_action:", act, msg);
+}
+
+
+
+function initiateTextModeCall(extension) {
+    console.log("🤐 Initiating Text-Mode Call to:", extension);
+
+    const userAgent = new SIP.UserAgent({
+        uri: SIP.UserAgent.makeURI(SIP_CFG.uri),
+        transportOptions: {
+            server: SIP_CFG.server
+        },
+        authorizationUsername: SIP_CFG.username,
+        authorizationPassword: SIP_CFG.password,
+        logLevel: "error"
+    });
+
+    userAgent.start().then(() => {
+        const target = SIP.UserAgent.makeURI(`sip:${extension}@${SIP_CFG.domain}`);
+        const inviter = new SIP.Inviter(userAgent, target);
+        
+        humanAgentSession = inviter;
+        humanAgentSession.isTextMode = true;
+
+        const options = {
+            sessionDescriptionHandlerOptions: {
+                constraints: { audio: true, video: false }, 
+                peerConnectionOptions: {
+                    iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+                }
+            }
+        };
+
+        inviter.stateChange.addListener((newState) => {
+            console.log("🤐 Text-Call State:", newState);
+
+            if (newState === SIP.SessionState.Established) {
+                console.log("✅ Agent Connected (Hidden Audio Mode)");
+
+                const pc = inviter.sessionDescriptionHandler.peerConnection;
+                pc.getSenders().forEach((sender) => {
+                    if (sender.track) sender.track.enabled = false; 
+                });
+
+                const remoteStream = new MediaStream();
+                pc.getReceivers().forEach((receiver) => {
+                    if (receiver.track) remoteStream.addTrack(receiver.track);
+                });
+                
+                const dummyAudio = new Audio();
+                dummyAudio.srcObject = remoteStream;
+                dummyAudio.muted = true;
+                dummyAudio.play().catch(e => console.log("Dummy audio play handled"));
+
+                let cleanMessages = [];
+                if (typeof conversationMessages !== 'undefined' && conversationMessages.length > 0) {
+                    cleanMessages = conversationMessages.map(msg => ({
+                        sender: msg.sender || "Unknown",
+                        text: msg.text || ""
+                    }));
+                } else {
+                    cleanMessages = [{ sender: "System", text: "Chat transfer initiated." }];
+                }
+
+                const analysisPayload = {
+                    client_id: typeof clientId !== 'undefined' ? clientId : "unknown",
+                    tts: "google", 
+                    messages: cleanMessages 
+                };
+
+                fetch('save_conversation.php', {  
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(analysisPayload)
+                })
+                .then(response => response.json())
+                .then(analysisData => {
+                    const aiSummary = analysisData.summary || "Summary not generated.";
+                    const aiSentiment = analysisData.sentiment || "Neutral";
+                    
+                    const rawTranscript = cleanMessages.map(m => `${m.sender}: ${m.text}`).join("\n");
+                    const enrichedChatHistory = `Sentiment: ${aiSentiment}\nSummary: ${aiSummary}\n--- TRANSCRIPT ---\n${rawTranscript}`;
+
+                    const vicidialApiUrl = DIALER_CFG.nonAgentApiUrl;
+                    const params = new URLSearchParams({
+                        user: DIALER_CFG.apiUser,
+                        pass: DIALER_CFG.apiPass,
+                        chat_history: enrichedChatHistory 
+                    });
+
+                    return fetch(`${vicidialApiUrl}?${params.toString()}`);
+                })
+                .then(response => response.text())
+                .then(data => console.log("📊 Vicidial History Sync Result:", data))
+                .catch(err => console.error("❌ Sync Failed:", err));
+
+                updateUIToTextAgentMode(extension);
+            }
+
+            if (newState === SIP.SessionState.Terminated) {
+                endHumanChatSession(); 
+            }
+        });
+
+        inviter.invite(options);
+
+    }).catch((error) => {
+        console.error("❌ Failed to start text-mode SIP:", error);
+        addMessage("Failed to connect to agent server.", true);
+    });
+}
+
+function updateUIToTextAgentMode(agentExt) {
+    document.getElementById("voice-controls").style.display = "none";
+
+    document.querySelector(".header-title").innerText = `Agent: Ankit`; 
+    document.getElementById("connection-status").innerText = "Live Chat";
+    document.getElementById("connection-status").classList.add("active");
+    
+    const brain = document.getElementById("brain-visualizer");
+    if(brain) brain.style.filter = "hue-rotate(120deg) brightness(1.2)";
+
+    const chatBox = document.getElementById("chat-scroll-area");
+    const msgDiv = document.createElement("div");
+    msgDiv.className = "message bot-msg agent-pulse";
+    msgDiv.style.background = "#e6fffa";
+    msgDiv.style.border = "1px solid #00ff80";
+    msgDiv.style.color = "#004d40";
+    
+    msgDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="background: #00ff80; color: #fff; width: 35px; height: 35px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-user-headset"></i>
+            </div>
+            <div>
+                <strong>Connected to Human Agent</strong>
+                <div style="font-size: 12px;">You can now type to chat with the agent.</div>
+            </div>
+        </div>
+        <button onclick="terminateAgentCall()" style="
+            margin-top: 10px; width: 100%; background: #ff4757; color: white; border: none; 
+            padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+            <i class="fa-solid fa-power-off"></i> End Chat
+        </button>
+    `;
+    
+    chatBox.appendChild(msgDiv);
+    scrollToBottom();
+
+    const chatInput = document.getElementById("chat-input"); 
+    if (chatInput) {
+        chatInput.disabled = false;
+        chatInput.placeholder = "Type here to chat with Ankit...";
+        chatInput.focus();
+    }
+}
+
+function endHumanChatSession() {
+    humanAgentSession = null;
+    document.getElementById("voice-controls").style.display = "flex";
+    document.querySelector(".header-title").innerText = "Amelia";
+    document.getElementById("connection-status").innerText = "Online";
+    document.getElementById("brain-visualizer").style.filter = "none";
+    setAIControlsEnabled(true);
+    addMessage("Chat session ended. Amelia is back online.", true);
+}
+</script>
+<script>
+let sessionId = null;
+
+try {
+    sessionId = localStorage.getItem('user_session_id');
+} catch (e) {
+    console.warn("LocalStorage is blocked. Switching to temporary memory mode.");
+}
+
+if (!sessionId) {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+        sessionId = crypto.randomUUID();
+    } else {
+        sessionId = 'sess_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+    }
+
+    try {
+        localStorage.setItem('user_session_id', sessionId);
+    } catch (e) {
+    }
+}
+
+console.log("Final Session ID to use:", sessionId);
+</script>
+</body>
+</html>

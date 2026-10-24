@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+python-multipart
+python-dotenv
+httpx
+openai
+websockets
+opencv-python
+numpy
+Pillow
+pytesseract
+# Optional: extra OCR and face checks (the app runs without them)
+# easyocr
+# deepface
